@@ -1,0 +1,9 @@
+{
+  "name": "Мировое господство",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Игра", "onAutoForward": "openBrowser" }
+  },
+  "postAttachCommand": "npm start"
+}

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Мировое господство</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Neucha&display=swap" rel="stylesheet">
+<style>
+  :root { --paper:#f3e6c4; --ink:#3b2f22; --accent:#c8501e; --gold:#e0a21b; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; }
+  body {
+    font-family: 'Neucha', 'Segoe Print', 'Comic Sans MS', cursive; color: var(--ink); font-size: 17px;
+    background: radial-gradient(circle at 30% 20%, #f6ecce, #e3d2a4 70%, #d6c18c);
+  }
+  .hidden { display:none !important; }
+  h1 { font-family:'Caveat', cursive; font-size: 54px; margin: 0 0 4px; line-height: 1; }
+  .sub { margin: 0 0 18px; opacity:.75; }
+  .screen { min-height:100%; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .card {
+    background: var(--paper); border: 3px solid var(--ink); border-radius: 14px 20px 16px 22px / 20px 14px 22px 16px;
+    box-shadow: 5px 6px 0 rgba(59,47,34,.55); padding: 26px 28px; width: min(460px, 100%); text-align:center;
+  }
+  input {
+    font: inherit; padding: 10px 12px; border: 2px solid var(--ink); border-radius: 10px; background:#fffaf0; color: var(--ink);
+    width:100%; margin-bottom: 10px; text-align:center;
+  }
+  #code { text-transform: uppercase; letter-spacing: 6px; font-size: 22px; margin:0; }
+  button {
+    font: inherit; cursor:pointer; padding: 9px 14px; color: var(--ink); background: #fff6dd;
+    border: 2px solid var(--ink); border-radius: 10px 14px 12px 15px / 14px 10px 15px 12px;
+    box-shadow: 2px 3px 0 var(--ink); transition: transform .05s, box-shadow .05s;
+  }
+  button:hover:not(:disabled) { background:#ffefc0; }
+  button:active:not(:disabled) { transform: translate(2px,3px); box-shadow: 0 0 0 var(--ink); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.big { width:100%; font-size: 20px; padding: 12px; background: var(--gold); }
+  button.on { background: var(--accent); color:#fff; }
+  small { opacity:.7; }
+  .row { display:flex; gap:10px; }
+  .or { margin: 16px 0 10px; opacity:.7; }
+  .err { color:#b02a1a; min-height: 22px; margin-top:10px; }
+  .codeBig { font-family:'Caveat', cursive; font-size: 80px; letter-spacing: 10px; line-height:1; margin: 6px 0 6px; }
+  .plist { margin: 14px 0; text-align:left; }
+  .pl { display:flex; align-items:center; gap:10px; padding:6px 4px; border-bottom:1px dashed rgba(59,47,34,.35); }
+  .dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--ink); flex:none; }
+  .btns { display:flex; gap:8px; margin: 6px 0 10px; }
+  .btns button { flex:1; padding:7px 8px; }
+  .lbl { margin-top: 8px; opacity:.8; font-size: 15px; }
+
+  #game { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #stage { position:relative; width:min(100vw, calc(100vh * 1.7857)); }
+  #map { width:100%; aspect-ratio: 1000 / 560; display:block; touch-action:none; background:#bcd6de; user-select:none; -webkit-user-select:none; }
+  .pill { position:absolute; background:var(--paper); border:2.5px solid var(--ink); border-radius: 12px 16px 12px 18px; padding: 3px 12px; box-shadow: 2px 3px 0 rgba(59,47,34,.5); }
+  #gold { left:12px; top:10px; font-size:22px; }
+  #scores { right:12px; top:10px; display:flex; gap:14px; font-size:19px; }
+  #scores span { display:flex; align-items:center; gap:6px; }
+  #hint { left:50%; bottom:12px; transform:translateX(-50%); font-size:15px; white-space:nowrap; }
+  #upBtn { position:absolute; transform:translate(-50%,-100%); white-space:nowrap; background:#ffd24a; font-size:15px; padding:5px 12px; z-index:5; }
+  #toast { position:fixed; left:50%; top:14px; transform:translateX(-50%); background:#b02a1a; color:#fff; padding:8px 16px; border-radius:10px; border:2px solid var(--ink); z-index:50; }
+  #winner { position:fixed; inset:0; background:rgba(40,30,20,.55); z-index:40; display:flex; align-items:center; justify-content:center; padding:16px; }
+</style>
+</head>
+<body>
+
+<div id="menu" class="screen">
+  <div class="card">
+    <h1>Мировое господство</h1>
+    <p class="sub">Захватывай башни, расти армию, завоюй мир</p>
+    <input id="name" maxlength="14" placeholder="Твоё имя" autocomplete="off">
+    <button id="btnCreate" class="big">Создать комнату</button>
+    <div class="or">или войти по коду</div>
+    <div class="row"><input id="code" maxlength="4" placeholder="КОД" autocomplete="off"><button id="btnJoin">Войти</button></div>
+    <div id="menuErr" class="err"></div>
+  </div>
+</div>
+
+<div id="lobby" class="screen hidden">
+  <div class="card">
+    <div class="sub" style="margin:0">Код комнаты</div>
+    <div class="codeBig" id="lobbyCode">----</div>
+    <button id="btnCopy">Скопировать ссылку для друзей</button>
+    <div class="plist" id="lobbyList"></div>
+    <div id="hostBox">
+      <div class="lbl">Скорость игры</div>
+      <div class="btns" id="speedBtns">
+        <button data-speed="1">×1</button><button data-speed="1.5">×1.5</button><button data-speed="2">×2</button>
+      </div>
+      <button id="btnStart" class="big">Начать игру</button>
+    </div>
+    <div id="waitHost" class="sub hidden">Ждём, пока хост начнёт игру…</div>
+  </div>
+</div>
+
+<div id="game" class="hidden">
+  <div id="stage">
+    <canvas id="map"></canvas>
+    <button id="upBtn" class="hidden"></button>
+    <div class="pill" id="gold"><span id="gAmt">0</span> 🪙 <small id="gInc"></small></div>
+    <div class="pill" id="scores"></div>
+    <div class="pill" id="hint">Тяни от своей башни к соседней — все бойцы пойдут в атаку. Клик по башне — улучшить.</div>
+  </div>
+</div>
+
+<div id="winner" class="hidden">
+  <div class="card">
+    <h1 id="winTitle">Победа!</h1>
+    <p class="sub" id="winSub"></p>
+    <button id="btnRestart" class="big">Вернуться в лобби</button>
+    <div id="winWait" class="sub hidden">Ждём хоста…</div>
+  </div>
+</div>
+<div id="toast" class="hidden"></div>
+
+<script src="/map.js"></script>
+<script>
+(() => {
+'use strict';
+const M = GameMap.buildMap(), T = M.territories, GW = M.GW, GH = M.GH, CELL = M.CELL, cells = M.cells, W = M.W, H = M.H;
+const UP = [30, 60, 120, 240, 480], MAXL = 5;
+const $ = (id) => document.getElementById(id);
+const INK = [59, 47, 34];
+
+// ---------- предрасчёт рисунка карты ----------
+const grain = new Float32Array(GW * GH), shore = new Uint8Array(GW * GH), border = new Uint8Array(GW * GH);
+for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
+  const i = gy * GW + gx, t = cells[i];
+  grain[i] = GameMap.hash2(gx * 7 + 3, gy * 13 + 5);
+  if (t >= 0) {
+    const nb = [gx > 0 ? cells[i - 1] : -1, gx < GW - 1 ? cells[i + 1] : -1, gy > 0 ? cells[i - GW] : -1, gy < GH - 1 ? cells[i + GW] : -1];
+    for (const n of nb) { if (n < 0) { border[i] = 2; break; } if (n !== t) border[i] = 1; }
+  } else {
+    let near = 0;
+    for (let dy = -2; dy <= 2 && !near; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const x = gx + dx, y = gy + dy;
+      if (x >= 0 && y >= 0 && x < GW && y < GH && cells[y * GW + x] >= 0) { near = 1; break; }
+    }
+    shore[i] = near;
+  }
+}
+const waves = [];
+for (let k = 0; k < 700 && waves.length < 70; k++) {
+  const x = GameMap.hash2(k, 11) * W, y = GameMap.hash2(k, 23) * H, i = Math.floor(y / CELL) * GW + Math.floor(x / CELL);
+  if (cells[i] < 0 && !shore[i] && x > 40 && y < H - 30) waves.push([x, y]);
+}
+const tshade = T.map((t) => 0.93 + GameMap.hash2(t.id, 77) * 0.12);
+const tcanvas = document.createElement('canvas'); tcanvas.width = GW; tcanvas.height = GH;
+const tctx = tcanvas.getContext('2d');
+const hexRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+// ---------- состояние ----------
+let S = null, offset = 0, session = null, es = null;
+let sel = -1, hover = -1, dirty = true, started = false;
+let drag = null;                 // { from, sx, sy, moved }
+let cur = [0, 0];                // положение курсора в координатах карты
+const canvas = $('map'), ctx = canvas.getContext('2d');
+const srvNow = () => Date.now() + offset;
+const mine = (t) => S && S.phase === 'playing' && t >= 0 && S.terr[t][0] === S.you;
+
+function show(which) {
+  $('menu').classList.toggle('hidden', which !== 'menu');
+  $('lobby').classList.toggle('hidden', which !== 'lobby');
+  $('game').classList.toggle('hidden', which !== 'game');
+}
+let toastTimer = 0;
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg; el.classList.remove('hidden');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.add('hidden'), 2000);
+}
+async function api(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Ошибка');
+  return j;
+}
+const doAct = (extra) => api('/api/action', Object.assign({ code: session.code, pid: session.pid }, extra)).catch((e) => { toast(e.message); throw e; });
+
+// ---------- меню и подключение ----------
+$('name').value = localStorage.getItem('wd_name') || '';
+const roomParam = new URLSearchParams(location.search).get('room');
+if (roomParam) $('code').value = roomParam.toUpperCase().slice(0, 4);
+
+function connect(code, pid) {
+  session = { code, pid };
+  sessionStorage.setItem('wd_session', JSON.stringify(session));
+  if (es) es.close();
+  es = new EventSource('/api/events?code=' + encodeURIComponent(code) + '&pid=' + encodeURIComponent(pid));
+  es.onmessage = (e) => onState(JSON.parse(e.data));
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) {
+      sessionStorage.removeItem('wd_session'); session = null; S = null; show('menu');
+      $('menuErr').textContent = 'Комната закрыта или не найдена';
+    }
+  };
+}
+async function enter(path, body) {
+  const name = $('name').value.trim();
+  localStorage.setItem('wd_name', name);
+  try {
+    $('menuErr').textContent = '';
+    const j = await api(path, Object.assign({ name }, body));
+    connect(j.code, j.pid);
+  } catch (e) { $('menuErr').textContent = e.message; }
+}
+$('btnCreate').onclick = () => enter('/api/create', {});
+$('btnJoin').onclick = () => enter('/api/join', { code: $('code').value.trim() });
+$('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnJoin').click(); });
+$('btnCopy').onclick = async () => {
+  const link = location.origin + '/?room=' + S.code;
+  try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована'); } catch { prompt('Скопируй ссылку:', link); }
+};
+$('btnStart').onclick = () => doAct({ type: 'start' }).catch(() => {});
+$('speedBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-speed]'); if (b) doAct({ type: 'speed', speed: Number(b.dataset.speed) }).catch(() => {}); });
+$('btnRestart').onclick = () => doAct({ type: 'restart' }).catch(() => {});
+
+// ---------- получение состояния ----------
+function onState(s) {
+  S = s; offset = s.now - Date.now();
+  if (s.phase === 'lobby') {
+    started = false; sel = -1; drag = null; $('winner').classList.add('hidden');
+    show('lobby'); renderLobby(); return;
+  }
+  show('game');
+  if (!started) { started = true; sel = -1; drag = null; }
+  $('winner').classList.toggle('hidden', s.phase !== 'ended');
+  if (s.phase === 'ended') renderWinner();
+  if (sel >= 0 && !mine(sel)) sel = -1;
+  dirty = true; renderScores();
+}
+function renderLobby() {
+  $('lobbyCode').textContent = S.code;
+  const list = $('lobbyList'); list.textContent = '';
+  S.players.forEach((p, i) => {
+    const row = document.createElement('div'); row.className = 'pl';
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = p.color;
+    const nm = document.createElement('span'); nm.textContent = p.name + (i === S.you ? ' (ты)' : '') + (i === S.host ? ' 👑' : '');
+    nm.style.flex = '1';
+    const st = document.createElement('small'); st.textContent = p.connected ? 'в сети' : 'нет связи';
+    row.append(dot, nm, st); list.appendChild(row);
+  });
+  const isHost = S.host === S.you;
+  $('hostBox').classList.toggle('hidden', !isHost);
+  $('waitHost').classList.toggle('hidden', isHost);
+  document.querySelectorAll('#speedBtns button').forEach((b) => b.classList.toggle('on', Number(b.dataset.speed) === S.speed));
+  $('btnStart').disabled = S.players.length < 2;
+  $('btnStart').textContent = S.players.length < 2 ? 'Нужен ещё хотя бы 1 игрок' : 'Начать игру';
+}
+function renderWinner() {
+  const w = S.winner, me = w === S.you;
+  $('winTitle').textContent = w === null ? 'Игра окончена' : me ? '🏆 Ты победил!' : S.players[w].name + ' победил!';
+  $('winSub').textContent = w === null ? '' : me ? 'Весь мир принадлежит тебе' : 'Весь мир принадлежит ему';
+  const isHost = S.host === S.you;
+  $('btnRestart').classList.toggle('hidden', !isHost);
+  $('winWait').classList.toggle('hidden', isHost);
+}
+function renderScores() {
+  const box = $('scores'); box.textContent = '';
+  S.players.forEach((p, i) => {
+    const row = document.createElement('span');
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = p.color;
+    const n = document.createElement('b'); n.textContent = p.alive ? String(p.terr) : '✕';
+    row.title = p.name + (i === S.you ? ' (ты)' : '');
+    row.append(dot, n); box.appendChild(row);
+  });
+}
+
+// ---------- мышь и пальцы: клик по башне и перетаскивание ----------
+function terrAt(mx, my) {
+  let best = -1, bd = 16 * 16;
+  for (const t of T) { const dx = t.x - mx, dy = t.y - my, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = t.id; } }
+  if (best >= 0) return best;
+  const gx = Math.floor(mx / CELL), gy = Math.floor(my / CELL);
+  if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return -1;
+  return cells[gy * GW + gx];
+}
+function mapPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H];
+}
+const dragTarget = () => {
+  if (!drag) return -1;
+  const t = terrAt(cur[0], cur[1]);
+  return t >= 0 && t !== drag.from && T[drag.from].adj.includes(t) ? t : -1;
+};
+canvas.addEventListener('pointerdown', (e) => {
+  if (!S || S.phase !== 'playing') return;
+  cur = mapPos(e);
+  const t = terrAt(cur[0], cur[1]);
+  if (mine(t)) {
+    drag = { from: t, sx: e.clientX, sy: e.clientY, moved: false };
+    canvas.setPointerCapture(e.pointerId);
+  } else { sel = -1; drag = null; }
+  dirty = true;
+});
+canvas.addEventListener('pointermove', (e) => {
+  cur = mapPos(e);
+  const t = terrAt(cur[0], cur[1]);
+  if (t !== hover) { hover = t; dirty = true; }
+  if (drag && !drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8) { drag.moved = true; sel = -1; }
+  canvas.style.cursor = drag && drag.moved ? 'grabbing' : mine(t) ? 'grab' : 'default';
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (!drag) return;
+  cur = mapPos(e);
+  const d = drag; drag = null; dirty = true;
+  if (!d.moved) { sel = sel === d.from ? -1 : d.from; return; }       // просто клик: показать/скрыть кнопку улучшения
+  drag = d; const to = dragTarget(); drag = null;
+  if (to >= 0) {
+    doAct({ type: 'send', from: d.from, to }).then(() => { hintDone = true; try { localStorage.setItem('wd_hint_done', '1'); } catch (e2) {} }).catch(() => {});
+  }
+});
+canvas.addEventListener('pointercancel', () => { drag = null; dirty = true; });
+canvas.addEventListener('pointerleave', () => { hover = -1; dirty = true; });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { sel = -1; drag = null; dirty = true; } });
+$('upBtn').onclick = () => { if (mine(sel)) doAct({ type: 'upgrade', terr: sel }).catch(() => {}); };
+
+// ---------- отрисовка ----------
+function renderTerrain() {
+  dirty = false;
+  const img = tctx.createImageData(GW, GH), d = img.data;
+  const cols = S ? S.players.map((p) => hexRgb(p.color)) : [];
+  const targets = drag ? new Set(T[drag.from].adj) : null;
+  for (let i = 0; i < cells.length; i++) {
+    const t = cells[i], o = i * 4;
+    let r, g, b;
+    const gr = (grain[i] - 0.5);
+    if (t < 0) {
+      if (shore[i]) { r = 208; g = 228; b = 232; } else { r = 186; g = 213; b = 222; }
+      const n = gr * 9; r += n; g += n; b += n;
+    } else {
+      const owner = S && S.terr[t] ? S.terr[t][0] : -1;
+      const sh = tshade[t];
+      r = 233 * sh; g = 214 * sh; b = 168 * sh;
+      if (owner >= 0 && cols[owner]) { const c = cols[owner]; r = r * 0.38 + c[0] * 0.62; g = g * 0.38 + c[1] * 0.62; b = b * 0.38 + c[2] * 0.62; }
+      if (targets && targets.has(t)) { r = r * 0.62 + 255 * 0.38; g = g * 0.62 + 236 * 0.38; b = b * 0.62 + 90 * 0.38; }
+      if (t === sel) { r += 30; g += 30; b += 30; } else if (t === hover) { r += 14; g += 14; b += 14; }
+      const n = gr * 12; r += n; g += n; b += n;
+      const bd = border[i];
+      if (bd) {
+        const a = bd === 2 ? 0.92 : 0.5;
+        r = r * (1 - a) + INK[0] * a; g = g * (1 - a) + INK[1] * a; b = b * (1 - a) + INK[2] * a;
+      }
+    }
+    d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+  }
+  tctx.putImageData(img, 0, 0);
+}
+function checkSize() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+  if (w && (canvas.width !== w || canvas.height !== h)) { canvas.width = w; canvas.height = h; }
+}
+function drawTower(x, y, color, level) {
+  const h = 10 + level * 2, w = 9;
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(1, 1.5, 8, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f6ecd0'; ctx.strokeStyle = '#3b2f22'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.rect(-w / 2, -h, w, h); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); for (let i = 0; i < 3; i++) ctx.rect(-w / 2 - 0.5 + i * 3.8, -h - 3.5, 2.8, 3.5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#3b2f22'; ctx.beginPath(); ctx.arc(0, -2.5, 1.9, Math.PI, 0); ctx.lineTo(1.9, 0); ctx.lineTo(-1.9, 0); ctx.fill();
+  if (color) {
+    ctx.strokeStyle = '#3b2f22'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, -h - 3.5); ctx.lineTo(0, -h - 12); ctx.stroke();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(0, -h - 12); ctx.lineTo(8, -h - 9); ctx.lineTo(0, -h - 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  if (level) {
+    ctx.fillStyle = '#e0a21b'; ctx.strokeStyle = '#3b2f22'; ctx.lineWidth = .8; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.strokeText('★'.repeat(level), -w / 2 - 2, -h / 2); ctx.fillText('★'.repeat(level), -w / 2 - 2, -h / 2);
+  }
+  ctx.restore();
+}
+function label(text, x, y, hot) {
+  ctx.font = '700 14px Caveat, cursive'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(246,236,208,.95)'; ctx.strokeText(text, x, y);
+  ctx.fillStyle = hot ? '#c8501e' : '#3b2f22'; ctx.fillText(text, x, y);
+}
+function drawArrow(ax, ay, bx, by, color) {
+  const ang = Math.atan2(by - ay, bx - ax), hl = 15;
+  const ex = bx - Math.cos(ang) * hl * 0.6, ey = by - Math.sin(ang) * hl * 0.6;
+  for (const pass of [0, 1]) {
+    ctx.strokeStyle = pass ? color : '#3b2f22'; ctx.fillStyle = pass ? color : '#3b2f22';
+    ctx.lineWidth = pass ? 4 : 7; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke();
+    const grow = pass ? 0 : 2;
+    ctx.beginPath();
+    ctx.moveTo(bx + Math.cos(ang) * grow, by + Math.sin(ang) * grow);
+    ctx.lineTo(bx - Math.cos(ang - 0.45) * (hl + grow), by - Math.sin(ang - 0.45) * (hl + grow));
+    ctx.lineTo(bx - Math.cos(ang + 0.45) * (hl + grow), by - Math.sin(ang + 0.45) * (hl + grow));
+    ctx.closePath(); ctx.fill();
+  }
+}
+function draw() {
+  const k = canvas.width / W;
+  ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(tcanvas, 0, 0, W, H);
+  ctx.strokeStyle = 'rgba(70,105,122,.45)'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+  for (const [x, y] of waves) { ctx.beginPath(); ctx.moveTo(x - 7, y); ctx.quadraticCurveTo(x - 3.5, y - 4, x, y); ctx.quadraticCurveTo(x + 3.5, y + 4, x + 7, y); ctx.stroke(); }
+  if (!S || S.phase === 'lobby') return;
+
+  // морские пути
+  ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(59,47,34,.45)'; ctx.lineWidth = 1.5;
+  for (const [a, b] of M.seaLinks) { ctx.beginPath(); ctx.moveTo(T[a].x, T[a].y); ctx.lineTo(T[b].x, T[b].y); ctx.stroke(); }
+  ctx.setLineDash([]);
+
+  // башни и число бойцов
+  const pulse = (Math.sin(Date.now() / 220) + 1) / 2;
+  for (const t of T) {
+    const [owner, troops, level] = S.terr[t.id];
+    const color = owner >= 0 ? S.players[owner].color : null;
+    drawTower(t.x, t.y - 2, color, level);
+    if (t.id === sel) { ctx.strokeStyle = '#c8501e'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(t.x, t.y - 8, 17 + pulse * 2.5, 0, 7); ctx.stroke(); }
+    const txt = String(troops);
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const bw = Math.max(20, ctx.measureText(txt).width + 10), by = t.y + 5;
+    ctx.fillStyle = color || '#8c8577'; ctx.strokeStyle = '#3b2f22'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.roundRect(t.x - bw / 2, by, bw, 13, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.fillText(txt, t.x, by + 7);
+  }
+  // название — только у той, на которую наведён курсор
+  if (hover >= 0 && !(drag && drag.moved)) label(T[hover].name, T[hover].x, T[hover].y + 26, true);
+
+  // идущие войска: по одной точке на каждого бойца
+  const now = srvNow(), sp = 0.3;
+  for (const [id, owner, from, to, n, t0, t1] of S.moves) {
+    const col = S.players[owner].color, e = (now - t0) / (t1 - t0);
+    const a = T[from], b = T[to], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+    ctx.lineWidth = 1; ctx.strokeStyle = '#3b2f22'; ctx.fillStyle = col;
+    for (let i = 0; i < n; i++) {
+      const p = e * (1 + sp) - sp * i / n;
+      if (p <= 0 || p >= 1) continue;
+      const lat = (GameMap.hash2(id * 31 + i, 7) * 2 - 1) * 7, back = (GameMap.hash2(id * 17 + i, 9) - 0.5) * 6;
+      const x = a.x + dx * p + nx * lat - (dx / len) * back, y = a.y + dy * p + ny * lat - (dy / len) * back - 4;
+      ctx.beginPath(); ctx.arc(x, y, 3.3, 0, 7); ctx.fill(); ctx.stroke();
+    }
+    const pm = Math.min(0.95, Math.max(0.05, e));
+    if (e > 0 && e < 1) label(String(n), a.x + dx * pm, a.y + dy * pm - 18, false);
+  }
+
+  // стрелка при перетаскивании
+  if (drag && drag.moved) {
+    const from = T[drag.from], tgt = dragTarget(), col = S.players[S.you].color;
+    const tx = tgt >= 0 ? T[tgt].x : cur[0], ty = tgt >= 0 ? T[tgt].y - 4 : cur[1];
+    drawArrow(from.x, from.y - 6, tx, ty, col);
+    if (tgt >= 0) label(T[tgt].name, T[tgt].x, T[tgt].y + 26, true);
+  }
+}
+
+// ---------- кнопка улучшения над башней ----------
+const cache = {};
+const setText = (id, v) => { if (cache[id] !== v) { cache[id] = v; $(id).textContent = v; } };
+function shownMoney() {
+  const p = S.players[S.you];
+  return p.money + (p.income || 0) * Math.max(0, srvNow() - S.now) / 1000;
+}
+function updateUpBtn() {
+  const b = $('upBtn');
+  if (!S || !mine(sel) || (drag && drag.moved)) { b.classList.add('hidden'); return; }
+  const level = S.terr[sel][2], money = shownMoney();
+  b.classList.remove('hidden');
+  if (level >= MAXL) { setText('upBtn', 'Башня на максимуме ★'); b.disabled = true; }
+  else { setText('upBtn', 'Улучшить: +' + (level + 2) + '/с · ' + UP[level] + ' 🪙'); b.disabled = money < UP[level]; }
+  b.style.left = (T[sel].x / W * 100) + '%';
+  b.style.top = ((T[sel].y - 32) / H * 100) + '%';
+}
+
+// ---------- главный цикл ----------
+let hintDone = false;
+try { hintDone = localStorage.getItem('wd_hint_done') === '1'; } catch (e) {}
+function frame() {
+  if (S && S.phase !== 'lobby') {
+    checkSize();
+    if (dirty) renderTerrain();
+    draw();
+    const me = S.players[S.you];
+    setText('gAmt', String(Math.floor(shownMoney())));
+    setText('gInc', '+' + (me.income || 0).toFixed(0) + '/с');
+    $('hint').classList.toggle('hidden', hintDone);
+    updateUpBtn();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------- возврат в комнату после перезагрузки страницы ----------
+try {
+  const saved = JSON.parse(sessionStorage.getItem('wd_session') || 'null');
+  if (saved && saved.code && saved.pid) connect(saved.code, saved.pid);
+} catch (e) {}
+})();
+</script>
+</body>
+</html>
